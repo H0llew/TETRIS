@@ -4,6 +4,12 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TreeCell;
 import javafx.scene.input.KeyCode;
 
+/**
+ * Vytvoří custom cell pro {@link TreeCell}, pro zobrazení {@link TreeViewItem}
+ *
+ * @author Martin Jakubašek
+ * @version 1.00.000
+ */
 public class ShapeCell extends TreeCell<TreeViewItem> {
     private TextField textTF;
 
