@@ -26,7 +26,7 @@ public class Tetris extends Application {
 
         Pane pane = new Pane();
 
-        TetrisManager tetrisManager = new TetrisManager(pane,25, new ArrayList<>());
+        TetrisManager tetrisManager = new TetrisManager(pane,25, new ArrayList<>(), "");
 
         Scene scene = new Scene(pane);
 
@@ -60,15 +60,15 @@ public class Tetris extends Application {
             switch (keyEvent.getCode()) {
                 case LEFT:
                     //System.out.println("LEFT KEY PRESSED");
-                    tetris.move(MoveDirection.LEFT);
+                    tetris.move(MoveDirection.LEFT,0);
                     break;
                 case RIGHT:
                     //System.out.println("RIGHT KEY PRESSED");
-                    tetris.move(MoveDirection.RIGHT);
+                    tetris.move(MoveDirection.RIGHT,0);
                     break;
                 case DOWN:
                     //System.out.println("DOWN KEY PRESSED");
-                    tetris.move(MoveDirection.DOWN);
+                    tetris.move(MoveDirection.DOWN,10);
                     break;
                 case R:
                     //System.out.println("CURRENT SHAPE ROTATED");

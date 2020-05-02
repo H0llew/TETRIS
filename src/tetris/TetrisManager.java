@@ -10,6 +10,8 @@ import tetris.leaderboard.LeaderboardData;
 
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.sql.Time;
 import java.util.*;
 
 /**
@@ -66,25 +68,37 @@ public class TetrisManager {
     // bylo skore uloženo ?
     private boolean scoreSaved = false;
 
+    private final String path;
+
     /**
      * Vytvoří nový tetris
      *
-     * @param pane panel, kam se má tetris vykreslit
+     * @param pane     panel, kam se má tetris vykreslit
      * @param cellSize šířka 1 buňky (sudý počet zabrání nežádoucím účinkům)
-     * @param playSet hrací set tvarů
+     * @param playSet  hrací set tvarů
      */
-    public TetrisManager(Pane pane, int cellSize, ArrayList<Shape> playSet) {
+    public TetrisManager(Pane pane, int cellSize, ArrayList<Shape> playSet, String path) {
         this.cellSize = cellSize;
         this.gamePane = pane;
 
         //shapes = generateBasicShapes();
         shapes = generatePlaySet(playSet);
+        this.path = path;
 
         //ArrayList<Shape> play = playSet;
 
         score = new SimpleIntegerProperty(0);
         level = new SimpleIntegerProperty(0);
 
+        //frame
+        Rectangle rectangle = new Rectangle(100,2);
+        rectangle.setX((ZONE_WIDTH * cellSize));
+        rectangle.setY(180);
+        pane.getChildren().add(rectangle);
+        Rectangle rectangle2 = new Rectangle(2,182);
+        rectangle2.setX((ZONE_WIDTH * cellSize + 100));
+        rectangle2.setY(0);
+        pane.getChildren().add(rectangle2);
 
         initPlayZone();
 
@@ -105,8 +119,7 @@ public class TetrisManager {
         if (!isOver) {
             update();
             draw();
-        }
-        else {
+        } else {
             if (!scoreSaved) {
                 writeToFile(new LeaderboardData("Player", score.getValue()));
                 scoreSaved = true;
@@ -127,12 +140,12 @@ public class TetrisManager {
      */
     private void update() {
         if (tick == 50) {
-            move(MoveDirection.DOWN);
+            move(MoveDirection.DOWN, 0);
             tick = 0;
         }
 
         tick++;
-        score.setValue(score.getValue() + 1);
+        //score.setValue(score.getValue() + 1);
         //System.out.println(score.getValue());
     }
 
@@ -160,25 +173,8 @@ public class TetrisManager {
                 //initPlayZone();
                 //printPlayZone();
 
-                printPlayZoneRects();
-                printPlayZone();
-
-
                 removeFromPane();
-
-                printPlayZoneRects();
-                printPlayZone();
-
                 createPlayZoneRects();
-
-                printPlayZoneRects();
-                printPlayZone();
-
-                printPlayZoneRects();
-
-                printPlayZoneRects();
-                printPlayZone();
-
                 addToPane();
             }
         }
@@ -197,6 +193,7 @@ public class TetrisManager {
 
     /**
      * Posune všechny řady nad řadou y včetně dolu
+     *
      * @param y řada
      */
     private void pushDown(int y) {
@@ -227,15 +224,14 @@ public class TetrisManager {
 
                     int realX = realIndex / ZONE_WIDTH;
                     int realY = realIndex % ZONE_WIDTH;
-                    System.out.println("[" + realX + ";" + realY + "]");
+                    //System.out.println("[" + realX + ";" + realY + "]");
 
 
                     if (!(realIndex < 0)) {
                         playZone[realIndex] = actualShape.getBlocks()[index];
-                    }
-                    else {
+                    } else {
                         // GAME OVER
-                        isOver = true;
+                        //isOver = true;
                     }
                     //System.out.println(realIndex);
                 }
@@ -253,21 +249,39 @@ public class TetrisManager {
     /**
      * Pohne s aktuální tvarem o 1 tvar ve směru direction, pokud se nemůže již pohnout uzamkne buňku,
      * popřípadě ukončí hru
+     *
      * @param direction směr
      */
-    public void move(MoveDirection direction) {
-        if (canMove(direction)) {
-            moveCurrentShape(direction);
-        } else {
-            if (direction == MoveDirection.DOWN) {
-                lockCurrentShape();
-                //removeFullRows();
+    public void move(MoveDirection direction, int score) {
+        if (!isOver) {
+            this.score.setValue(this.score.getValue() + score);
+            if (canMove(direction)) {
+                moveCurrentShape(direction);
+            } else {
+                if (direction == MoveDirection.DOWN) {
+                    lockCurrentShape();
+                    //removeFullRows();
+                }
             }
         }
     }
 
     /**
+     * Zkontroluje zda se může spawnout tvar, jestli ne, zvedne jeho pozici o 1
+     */
+    private void checkSpawn() {
+        Point2D container = new Point2D(actualPos.getX(), actualPos.getY());
+        actualPos = new Point2D(actualPos.getX(), actualPos.getY() - 1);
+        if (!canMove(MoveDirection.DOWN)) {
+            isOver = true;
+        } else {
+            move(MoveDirection.DOWN, 0);
+        }
+    }
+
+    /**
      * Pohne s aktuální tvarem o 1 tvar ve směru direction
+     *
      * @param direction směr
      */
     private void moveCurrentShape(MoveDirection direction) {
@@ -291,7 +305,6 @@ public class TetrisManager {
      * Může se bunka pohnout směrem direction?
      *
      * @param direction směr
-     *
      * @return ano může -> ne nemůžu
      */
     private boolean canMove(MoveDirection direction) {
@@ -336,7 +349,7 @@ public class TetrisManager {
      * Zrotuje aktuální tvar o 90 stupnů
      */
     public void rotateActualShape() {
-        if (canRotate()) {
+        if (canRotate() && !isOver) {
             actualShape.rotate();
             removeASFromPanel();
             actualShapeRects = createActualShapeRects();
@@ -447,8 +460,10 @@ public class TetrisManager {
         drawNextShapesRects();
         addNSToPanel();
 
-        actualShapeRects = createActualShapeRects();
         actualPos = new Point2D(STARTING_POS.getX(), STARTING_POS.getY());
+        checkSpawn();
+
+        actualShapeRects = createActualShapeRects();
         addASToPanel();
     }
 
@@ -526,7 +541,7 @@ public class TetrisManager {
             for (int y = 0; y < width; y++) {
                 for (int x = 0; x < width; x++) {
                     if (blocks[y * width + x] != 0) {
-                        Rectangle rectangle = new Rectangle(cellSize / 2d, cellSize / 2d);
+                        Rectangle rectangle = new Rectangle(cellSize/1.5, cellSize/1.6);
                         rectangle.setFill(shape.getColor());
                         rects[y * width + x] = rectangle;
                     } else {
@@ -551,8 +566,10 @@ public class TetrisManager {
                     int index = y * length + x;
                     Rectangle rectangle = rects[index];
                     if (rectangle != null) {
-                        int xPos = (int) ((x + (ZONE_WIDTH + 15)) * (cellSize / 2d));
-                        int yPos = (int) ((y + (count * 4 + 2)) * (cellSize / 2d));
+                        //int xPos = (int) ((x + (ZONE_WIDTH + 15)) * (cellSize / 2d));
+                        //int yPos = (int) ((y + (count * 4 + 2)) * (cellSize / 2d));
+                        int xPos = (int) ((x + (ZONE_WIDTH + 10)) * (cellSize/1.6));
+                        int yPos = (int) ((y + (count * 4 + 2)) * (cellSize/1.6));
 
 
                         //System.out.println("[" + x + "," + y + "]");
@@ -675,8 +692,7 @@ public class TetrisManager {
                     Rectangle rectangle = new Rectangle(cellSize, cellSize);
                     if (playZone[y * ZONE_WIDTH + x] == -1) {
                         rectangle.setFill(borderColor);
-                    }
-                    else {
+                    } else {
                         rectangle.setFill(shapes[playZone[y * ZONE_WIDTH + x] - 1].getColor());
                     }
                     playZoneRects[y * ZONE_WIDTH + x] = rectangle;
@@ -698,16 +714,13 @@ public class TetrisManager {
 
     /**
      * Uloží data skóre
+     *
      * @param data skóre
      */
     private void writeToFile(LeaderboardData data) {
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream("data.txt");
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-            objectOutputStream.writeObject(data);
-            objectOutputStream.close();
-
-            System.out.println("TASK SUCCESFULL");
+        try (PrintWriter write = new PrintWriter(path + "/" + System.currentTimeMillis() + ".txt")) {
+            write.println(data.playerName.getValue());
+            write.println(data.score.getValue());
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -720,7 +733,6 @@ public class TetrisManager {
      * Vygeneruje tvary z herního setu (musí jim přepsat bloky z 1 na x reprezentující pořadí v poli kvůli barvě)
      *
      * @param playSet hrací set
-     *
      * @return tvary
      */
     private Shape[] generatePlaySet(ArrayList<Shape> playSet) {

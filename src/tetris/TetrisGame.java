@@ -38,6 +38,7 @@ public class TetrisGame extends Application {
     private static final String exitText = "Exit Game";
 
     private static final String SHAPE_PATH = "shapes";
+    private static final String SCORE_PATH = "scores";
 
     private Image background = new Image("/tetrisMenu.png");
     private Image hint = new Image("/Hint.png");
@@ -75,7 +76,7 @@ public class TetrisGame extends Application {
         BorderPane root = new BorderPane();
 
         Pane gamePane = getTetrisPane();
-        TetrisManager tetris = new TetrisManager(gamePane, 20, playSet);
+        TetrisManager tetris = new TetrisManager(gamePane, 20, playSet, SCORE_PATH);
 
         root.setCenter(gamePane);
 
@@ -131,7 +132,7 @@ public class TetrisGame extends Application {
      */
     public void setLeaderboardScene() {
         //mainMenuStage.setScene(new Scene(getLeaderboardPane(), SCENE_WIDTH, SCENE_HEIGHT));
-        mainMenuStage.setScene(new Scene(Leaderboard.getLeaderboard().create("scores", returnToMMBTN()), SCENE_WIDTH, SCENE_HEIGHT));
+        mainMenuStage.setScene(new Scene(Leaderboard.getLeaderboard().create(SCORE_PATH, returnToMMBTN()), SCENE_WIDTH, SCENE_HEIGHT));
     }
 
     /**
@@ -374,15 +375,15 @@ public class TetrisGame extends Application {
             switch (keyEvent.getCode()) {
                 case LEFT:
                     //System.out.println("LEFT KEY PRESSED");
-                    tetris.move(MoveDirection.LEFT);
+                    tetris.move(MoveDirection.LEFT,0);
                     break;
                 case RIGHT:
                     //System.out.println("RIGHT KEY PRESSED");
-                    tetris.move(MoveDirection.RIGHT);
+                    tetris.move(MoveDirection.RIGHT,0);
                     break;
                 case DOWN:
                     //System.out.println("DOWN KEY PRESSED");
-                    tetris.move(MoveDirection.DOWN);
+                    tetris.move(MoveDirection.DOWN,10);
                     break;
                 case R:
                     //System.out.println("CURRENT SHAPE ROTATED");
