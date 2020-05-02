@@ -16,7 +16,7 @@ public class MM {
 
     private static final String gameStartText = "PLAY";
     private static final String shapeEditorText = "Editor";
-    private static final String leaderboardText = "Leaderboard";
+    private static final String leaderboardText = "leaderboard.Leaderboard";
     private static final String optionsText = "Options";
     private static final String exitText = "Exit Game";
 
@@ -62,7 +62,7 @@ public class MM {
     }
 
     private Parent getLeaderboardPane() {
-        return testPane("Leaderboard");
+        return testPane("leaderboard.Leaderboard");
     }
 
     private Parent getOptionsPane() {
@@ -120,7 +120,7 @@ public class MM {
     private Pane testMainMenuPane() {
         Label label = new Label("Main Menu");
         Button options = new Button("Options");
-        Button leaderboard = new Button("Leaderboard");
+        Button leaderboard = new Button("leaderboard.Leaderboard");
 
         options.setOnAction(actionEvent -> setOptionsScene());
         leaderboard.setOnAction(actionEvent -> setLeaderboardScene());

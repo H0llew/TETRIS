@@ -4,6 +4,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import leaderboard.LeaderboardData;
 
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;

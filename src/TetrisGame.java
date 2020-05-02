@@ -2,21 +2,19 @@ import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.skin.LabeledSkinBase;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-
-import javax.imageio.ImageIO;
+import leaderboard.Leaderboard;
+import leaderboard.LeaderboardData;
+import shapeeditor.ShapeEditor;
 
 public class TetrisGame extends Application {
 
@@ -47,7 +45,7 @@ public class TetrisGame extends Application {
         setMainMenuScene();
 
 
-        //stage.setScene(new Scene(Leaderboard.getLeaderboard().create()));
+        //stage.setScene(new Scene(leaderboard.Leaderboard.getLeaderboard().create()));
 
         stage.show();
     }
@@ -98,7 +96,9 @@ public class TetrisGame extends Application {
     public void setShapeEditorStage() {
         editorStage = new Stage();
 
-        Scene scene = new Scene(getShapeEditorPane());
+        //Scene scene = new Scene(getShapeEditorPane());
+        ShapeEditor shapeEditor = new ShapeEditor(4);
+        Scene scene = new Scene(shapeEditor.create());
         editorStage.setScene(scene);
 
         editorStage.show();
@@ -213,7 +213,7 @@ public class TetrisGame extends Application {
 
         root.setBottom(button);
 
-        //Leaderboard leaderboard = Leaderboard.getLeaderboard();
+        //leaderboard.Leaderboard leaderboard = leaderboard.Leaderboard.getLeaderboard();
         //leaderboard.create();
 
         return root;
@@ -330,7 +330,7 @@ public class TetrisGame extends Application {
     private Pane testMainMenuPane() {
         Label label = new Label("Main Menu");
         Button options = new Button("Options");
-        Button leaderboard = new Button("Leaderboard");
+        Button leaderboard = new Button("leaderboard.Leaderboard");
 
         options.setOnAction(actionEvent -> setOptionsScene());
         leaderboard.setOnAction(actionEvent -> setLeaderboardScene());

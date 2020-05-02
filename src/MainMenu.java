@@ -14,7 +14,7 @@ public class MainMenu {
 
     private static final String gameStartText = "PLAY";
     private static final String shapeEditorText = "Editor";
-    private static final String leaderboardText = "Leaderboard";
+    private static final String leaderboardText = "leaderboard.Leaderboard";
     private static final String optionsText = "Options";
     private static final String exitText = "Exit Game";
 
@@ -52,7 +52,7 @@ public class MainMenu {
 
     private Parent getLeaderboard() {
         Pane root = new Pane();
-        Label text = new Label("Leaderboard");
+        Label text = new Label("leaderboard.Leaderboard");
         Button exitBTN = new Button("Return to main menu");
 
         root.getChildren().addAll(text, exitBTN);

@@ -1,3 +1,5 @@
+package leaderboard;
+
 import javafx.scene.control.TableCell;
 
 public class OrderCell extends TableCell<LeaderboardData, Integer> {

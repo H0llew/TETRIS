@@ -1,15 +1,13 @@
-import javafx.collections.ArrayChangeListener;
+package leaderboard;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -17,9 +15,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.logging.FileHandler;
 
 /**
  * Slouží k vytvoření tabulky se skórem pomocí metody třídy create()
@@ -146,9 +141,9 @@ public class Leaderboard {
     }
 
     /**
-     * Postupně projde včechny *.txt soubory v path ,a převede je na LeaderboardData, které následně vrátí ve formě listu
+     * Postupně projde včechny *.txt soubory v path ,a převede je na leaderboard.LeaderboardData, které následně vrátí ve formě listu
      *
-     * @return list LeaderboardData ze souboru path
+     * @return list leaderboard.LeaderboardData ze souboru path
      */
     private ArrayList<LeaderboardData> getFromFile() {
         ArrayList<LeaderboardData> list = new ArrayList<>();
