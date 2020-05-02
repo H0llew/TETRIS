@@ -12,11 +12,19 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import tetris.leaderboard.Leaderboard;
 import tetris.leaderboard.LeaderboardData;
+import tetris.shapeeditor.FileType;
 import tetris.shapeeditor.ShapeEditor;
+import tetris.shapeeditor.TreeViewItem;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
 
 public class TetrisGame extends Application {
 
@@ -29,12 +37,16 @@ public class TetrisGame extends Application {
     private static final String optionsText = "Options";
     private static final String exitText = "Exit Game";
 
+    private static final String SHAPE_PATH = "shapes";
+
     private Image background = new Image("/tetrisMenu.png");
     private Image hint = new Image("/Hint.png");
 
     private Stage mainMenuStage;
     private Stage tetrisStage;
     private Stage editorStage;
+
+    private ShapeEditor shapeEditor;
 
     public static void main(String[] args) {
         launch(args);
@@ -46,7 +58,7 @@ public class TetrisGame extends Application {
         this.mainMenuStage = stage;
         setMainMenuScene();
 
-
+        shapeEditor = new ShapeEditor(4, SHAPE_PATH);
         //stage.setScene(new Scene(leaderboard.Leaderboard.getLeaderboard().create()));
 
         stage.show();
@@ -57,13 +69,13 @@ public class TetrisGame extends Application {
     /**
      * Creates a new stage with tetris game.
      */
-    public void setTetrisStage() {
+    public void setTetrisStage(ArrayList<Shape> playSet) {
         tetrisStage = new Stage();
 
         BorderPane root = new BorderPane();
 
         Pane gamePane = getTetrisPane();
-        TetrisManager tetris = new TetrisManager(gamePane, 20);
+        TetrisManager tetris = new TetrisManager(gamePane, 20, playSet);
 
         root.setCenter(gamePane);
 
@@ -98,7 +110,7 @@ public class TetrisGame extends Application {
     public void setShapeEditorStage() {
         editorStage = new Stage();
 
-        ShapeEditor shapeEditor = new ShapeEditor(4, "shapes");
+        //ShapeEditor shapeEditor = new ShapeEditor(4, "shapes");
         Scene scene = new Scene(shapeEditor.create());
         editorStage.setScene(scene);
 
@@ -257,7 +269,88 @@ public class TetrisGame extends Application {
     // Buttons
 
     private void createGameStage() {
-        setTetrisStage();
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Select play set");
+        alert.setHeaderText("Choose a play set");
+        TreeView<TreeViewItem> treeView = shapeEditor.getTreeView();
+        alert.setGraphic(treeView);
+        alert.showAndWait()
+                .filter(response -> response == ButtonType.OK)
+                .ifPresent(response -> {
+                    TreeItem<TreeViewItem> selected = treeView.getSelectionModel().getSelectedItem();
+                    if (selected == null) {
+                        Alert error = new Alert(Alert.AlertType.ERROR);
+                        error.setTitle("Error");
+                        error.setHeaderText("Nothing is selected!");
+                        error.showAndWait();
+                    } else {
+                        if (selected.getValue().getType() == FileType.SHAPE) {
+                            Alert error2 = new Alert(Alert.AlertType.ERROR);
+                            error2.setTitle("Error");
+                            error2.setHeaderText("Selected item is a shape!");
+                            error2.setContentText("Please select a folder with shapes!");
+                            error2.showAndWait();
+                        } else {
+                            if (selected.getParent() == null) {
+                                Alert error3 = new Alert(Alert.AlertType.ERROR);
+                                error3.setTitle("Error");
+                                error3.setHeaderText("Selected item is root file!");
+                                error3.setContentText("Please select a folder with shapes!");
+                                error3.showAndWait();
+                            } else {
+                                //System.out.println("hi");
+                                ArrayList<Shape> selectedShapes = new ArrayList<>();
+                                File file = new File(selected.getParent().getValue().getName() + "/"
+                                        + selected.getValue().getName());
+                                if (file.exists()) {
+                                    File[] shapes = file.listFiles();
+                                    if (shapes != null) {
+                                        for (File shape : shapes) {
+                                            if (shape.isFile() && shape.getName().endsWith(".txt")) {
+                                                try {
+                                                    BufferedReader br = new BufferedReader(new FileReader(shape));
+                                                    try {
+                                                        String name = br.readLine();
+
+                                                        String blockSeq = br.readLine();
+                                                        String[] split = blockSeq.split(" ");
+                                                        int[] blocks = new int[split.length];
+                                                        for (int i = 0; i < blocks.length; i++) {
+                                                            blocks[i] = Integer.parseInt(split[i]);
+                                                        }
+
+                                                        String colorString = br.readLine();
+                                                        Color color = Color.web(colorString);
+
+                                                        Shape newShape = new Shape(blocks, name, color);
+
+                                                        selectedShapes.add(newShape);
+                                                    }
+                                                    catch (Exception e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                    br.close();
+                                                } catch (Exception e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (selectedShapes.size() != 0) {
+                                    setTetrisStage(selectedShapes);
+                                }
+                                else {
+                                    Alert noShapes = new Alert(Alert.AlertType.ERROR);
+                                    noShapes.setTitle("Error");
+                                    noShapes.setHeaderText("No shapes found in selected folder");
+                                    noShapes.showAndWait();
+                                }
+                            }
+                        }
+                    }
+                });
     }
 
     private void createEditorStage() {

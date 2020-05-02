@@ -6,6 +6,8 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
+
 public class Tetris extends Application {
 
     public static void main(String[] args) {
@@ -24,7 +26,7 @@ public class Tetris extends Application {
 
         Pane pane = new Pane();
 
-        TetrisManager tetrisManager = new TetrisManager(pane,25);
+        TetrisManager tetrisManager = new TetrisManager(pane,25, new ArrayList<>());
 
         Scene scene = new Scene(pane);
 

@@ -12,42 +12,75 @@ import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.*;
 
+/**
+ * Třída reprezentuje samotnou hru tetris. Obsahuje herní smyčku, stará se o vykreslené + logiku hry
+ *
+ * @author Martin Jakubašek
+ * @version 1.00.000
+ */
 public class TetrisManager {
 
+    // šířka výška zóny
     private static final int ZONE_WIDTH = 14;
     private static final int ZONE_HEIGHT = 24;
 
+    // hrací pole
     private final int[] playZone = new int[ZONE_WIDTH * ZONE_HEIGHT];
+    // hrací pole reprezentováno obdelníky
     private Rectangle[] playZoneRects = new Rectangle[playZone.length];
 
+    // šířka jedné buňky
     private final int cellSize;
+    // herní panel (určuje kam se hra vykresluje)
     private final Pane gamePane;
 
-    private static final Point2D STARTING_POS = new Point2D(4, -2);
+    // startovní pozice tvaru
+    private static final Point2D STARTING_POS = new Point2D(4, 0);
 
+    // aktuílní tvar
     private Shape actualShape;
     private Rectangle[] actualShapeRects;
     private Point2D actualPos;
 
+    // 1 tick animTimeru
     private int tick = 0;
 
+    // hrací tvary
     private Shape[] shapes;
 
+    // game over
     private boolean isOver = false;
 
+    // score
     public IntegerProperty score;
+    //level
     public IntegerProperty level;
 
+    // queue dalších tvarů
     List<Shape> nextShapes = new ArrayList<>();
     List<Rectangle[]> nextShapesRects = new ArrayList<>();
 
+    // barva krajů
+    private Color borderColor = Color.BLACK;
+
+    // bylo skore uloženo ?
     private boolean scoreSaved = false;
 
-    public TetrisManager(Pane pane, int cellSize) {
+    /**
+     * Vytvoří nový tetris
+     *
+     * @param pane panel, kam se má tetris vykreslit
+     * @param cellSize šířka 1 buňky (sudý počet zabrání nežádoucím účinkům)
+     * @param playSet hrací set tvarů
+     */
+    public TetrisManager(Pane pane, int cellSize, ArrayList<Shape> playSet) {
         this.cellSize = cellSize;
         this.gamePane = pane;
 
-        shapes = generateBasicShapes();
+        //shapes = generateBasicShapes();
+        shapes = generatePlaySet(playSet);
+
+        //ArrayList<Shape> play = playSet;
 
         score = new SimpleIntegerProperty(0);
         level = new SimpleIntegerProperty(0);
@@ -65,13 +98,15 @@ public class TetrisManager {
 
     // UPDATE - DRAW
 
+    /**
+     * Další krok herního cyklu
+     */
     public void nextStep() {
         if (!isOver) {
             update();
             draw();
         }
         else {
-            removeFromPane();
             if (!scoreSaved) {
                 writeToFile(new LeaderboardData("Player", score.getValue()));
                 scoreSaved = true;
@@ -79,11 +114,17 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * vykreslovací krok cyklu
+     */
     private void draw() {
         drawPlayZone();
         drawActualShape();
     }
 
+    /**
+     * logický krok cyklu
+     */
     private void update() {
         if (tick == 50) {
             move(MoveDirection.DOWN);
@@ -97,6 +138,9 @@ public class TetrisManager {
 
     // REMOVE FULL ROWS
 
+    /**
+     * Odstraní všechny plné řádky
+     */
     private void removeFullRows() {
         int[] indexes = new int[ZONE_HEIGHT];
         for (int y = 0; y < ZONE_HEIGHT; y++) {
@@ -140,12 +184,21 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Odstraní řadu na pozici y
+     *
+     * @param y řada
+     */
     private void removeRow(int y) {
         for (int x = 1; x < ZONE_WIDTH - 1; x++) {
             playZone[y * ZONE_WIDTH + x] = 0;
         }
     }
 
+    /**
+     * Posune všechny řady nad řadou y včetně dolu
+     * @param y řada
+     */
     private void pushDown(int y) {
         for (int y1 = y - 1; y1 >= 0; y1--) {
             for (int x = 1; x < ZONE_WIDTH - 1; x++) {
@@ -158,6 +211,10 @@ public class TetrisManager {
 
     // LOCK SHAPE AND GET NEXT ONE
 
+    /**
+     * Uzamkne tvar na pozici v herní poli a spawne další tvar
+     * (pokud tvar je mimo herní pole -> GAME OVER)
+     */
     private void lockCurrentShape() {
         Point2D nextPos = new Point2D(actualPos.getX(), actualPos.getY());
         int length = (int) (Math.sqrt(actualShape.getBlocks().length));
@@ -167,6 +224,12 @@ public class TetrisManager {
                 int index = y * length + x;
                 if (actualShape.getBlocks()[index] != 0) {
                     int realIndex = (int) (((y + nextPos.getY()) * ZONE_WIDTH) + (x + nextPos.getX()));
+
+                    int realX = realIndex / ZONE_WIDTH;
+                    int realY = realIndex % ZONE_WIDTH;
+                    System.out.println("[" + realX + ";" + realY + "]");
+
+
                     if (!(realIndex < 0)) {
                         playZone[realIndex] = actualShape.getBlocks()[index];
                     }
@@ -187,6 +250,11 @@ public class TetrisManager {
 
     // MOVE ACTUAL SHAPE
 
+    /**
+     * Pohne s aktuální tvarem o 1 tvar ve směru direction, pokud se nemůže již pohnout uzamkne buňku,
+     * popřípadě ukončí hru
+     * @param direction směr
+     */
     public void move(MoveDirection direction) {
         if (canMove(direction)) {
             moveCurrentShape(direction);
@@ -198,6 +266,10 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Pohne s aktuální tvarem o 1 tvar ve směru direction
+     * @param direction směr
+     */
     private void moveCurrentShape(MoveDirection direction) {
         switch (direction) {
             case LEFT:
@@ -215,6 +287,13 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Může se bunka pohnout směrem direction?
+     *
+     * @param direction směr
+     *
+     * @return ano může -> ne nemůžu
+     */
     private boolean canMove(MoveDirection direction) {
         Point2D nextPos = new Point2D(actualPos.getX(), actualPos.getY());
         int length = (int) (Math.sqrt(actualShape.getBlocks().length));
@@ -253,6 +332,9 @@ public class TetrisManager {
         return true;
     }
 
+    /**
+     * Zrotuje aktuální tvar o 90 stupnů
+     */
     public void rotateActualShape() {
         if (canRotate()) {
             actualShape.rotate();
@@ -262,6 +344,11 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Může se aktuální tvar zrotovat o 90 stupňů ?
+     *
+     * @return ano může, ne nemůže
+     */
     private boolean canRotate() {
         Point2D nextPos = new Point2D(actualPos.getX(), actualPos.getY());
         int length = (int) (Math.sqrt(actualShape.getBlocks().length));
@@ -294,6 +381,9 @@ public class TetrisManager {
 
     // SHOW ACTUAL SHAPE
 
+    /**
+     * Vykreslí aktuální tvar na panel
+     */
     public void drawActualShape() {
         int length = (int) (Math.sqrt(actualShapeRects.length));
         for (int y = 0; y < length; y++) {
@@ -313,6 +403,9 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Přidá aktuální tvar do panelu
+     */
     private void addASToPanel() {
         for (Rectangle rectangle : actualShapeRects) {
             if (rectangle != null)
@@ -320,6 +413,9 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Odebere aktuální tvar z panelu
+     */
     private void removeASFromPanel() {
         if (actualShapeRects != null) {
             for (Rectangle rectangle : actualShapeRects) {
@@ -331,6 +427,9 @@ public class TetrisManager {
 
     // INIT ACTUAL SHAPE
 
+    /**
+     * vytvoří nový tvar, vytvoří jeho obdelníky, přidá ho do panle, vykreslí.
+     */
     private void initActualShape() {
         removeASFromPanel();
         //actualShape = createNewShape();
@@ -353,6 +452,11 @@ public class TetrisManager {
         addASToPanel();
     }
 
+    /**
+     * Vytvoří nový tvar, který je náhodně vybraný z herní sady
+     *
+     * @return nový tvar
+     */
     private Shape createNewShape() {
         double random = Math.random();
         double step = 1d / shapes.length;
@@ -373,6 +477,11 @@ public class TetrisManager {
         return new Shape(blocks, shapes[count].getName(), shapes[count].getColor());
     }
 
+    /**
+     * Vytvoří aktuálnímu tvaru obdelníky (pro vykreslení)
+     *
+     * @return obdelníky aktuálního tvaru
+     */
     private Rectangle[] createActualShapeRects() {
         int[] blocks = actualShape.getBlocks();
         int width = (int) (Math.sqrt(blocks.length));
@@ -395,12 +504,18 @@ public class TetrisManager {
 
     // INIT NEXT SHAPES
 
+    /**
+     * Vygeneruje queue dalších tvarů
+     */
     private void generateNextShapes() {
         for (int i = 0; i < 3; i++) {
             nextShapes.add(createNewShape());
         }
     }
 
+    /**
+     * Vygeneruje obdelníky dalších tvarů (pro ukázání queue)
+     */
     private void generateNextShapesRects() {
         nextShapesRects = new ArrayList<>();
         for (Shape shape : nextShapes) {
@@ -424,6 +539,9 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Vykreslí queue obdelníků
+     */
     private void drawNextShapesRects() {
         int count = 0;
         for (Rectangle[] rects : nextShapesRects) {
@@ -448,6 +566,9 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Přidá obdelníky queue do panelu
+     */
     private void addNSToPanel() {
         for (Rectangle[] rects : nextShapesRects) {
             for (Rectangle rectangle : rects) {
@@ -457,6 +578,9 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Odebere obdelníky z queue
+     */
     private void removeNSFromPanel() {
         if (nextShapesRects != null) {
             for (Rectangle[] rects : nextShapesRects) {
@@ -470,6 +594,9 @@ public class TetrisManager {
 
     // SHOW PLAY ZONE
 
+    /**
+     * Vykreslí herní pole na panel
+     */
     public void drawPlayZone() {
         for (int y = 0; y < ZONE_HEIGHT; y++) {
             for (int x = 0; x < ZONE_WIDTH; x++) {
@@ -488,6 +615,9 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Odebere herní pole z panelu
+     */
     private void removeFromPane() {
         if (playZoneRects != null) {
             for (Rectangle rectangle : playZoneRects) {
@@ -497,6 +627,9 @@ public class TetrisManager {
         }
     }
 
+    /**
+     * Přidá herní pole na panel
+     */
     private void addToPane() {
         for (Rectangle rectangle : playZoneRects) {
             if (rectangle != null)
@@ -506,6 +639,12 @@ public class TetrisManager {
 
     // INIT PLAY ZONE
 
+    /**
+     * Inicializuje hrací pole
+     * vytvoří borders
+     * vytvoří obdelníky herního pole
+     * vykreslí hp na plátno
+     */
     private void initPlayZone() {
         removeFromPane();
         createBorders();
@@ -514,21 +653,32 @@ public class TetrisManager {
         addToPane();
     }
 
+    /**
+     * Vytvoří borders hrací zóny -> okraje dá jim hodnotu -1
+     */
     private void createBorders() {
         for (int y = 0; y < ZONE_HEIGHT; y++) {
             for (int x = 0; x < ZONE_WIDTH; x++) {
                 if (x == 0 || x == ZONE_WIDTH - 1)
-                    playZone[y * ZONE_WIDTH + x] = 1;
+                    playZone[y * ZONE_WIDTH + x] = -1;
             }
         }
     }
 
+    /**
+     * Vytvoří obdelníky hracího pole
+     */
     private void createPlayZoneRects() {
         for (int y = 0; y < ZONE_HEIGHT; y++) {
             for (int x = 0; x < ZONE_WIDTH; x++) {
                 if (playZone[y * ZONE_WIDTH + x] != 0) {
                     Rectangle rectangle = new Rectangle(cellSize, cellSize);
-                    rectangle.setFill(shapes[playZone[y * ZONE_WIDTH + x] - 1].getColor());
+                    if (playZone[y * ZONE_WIDTH + x] == -1) {
+                        rectangle.setFill(borderColor);
+                    }
+                    else {
+                        rectangle.setFill(shapes[playZone[y * ZONE_WIDTH + x] - 1].getColor());
+                    }
                     playZoneRects[y * ZONE_WIDTH + x] = rectangle;
                 } else {
                     playZoneRects[y * ZONE_WIDTH + x] = null;
@@ -539,12 +689,17 @@ public class TetrisManager {
 
     // GET-SET
 
+    // OLD
     public Rectangle[] getPlayZoneRects() {
         return playZoneRects;
     }
 
     // WRITE
 
+    /**
+     * Uloží data skóre
+     * @param data skóre
+     */
     private void writeToFile(LeaderboardData data) {
         try {
             FileOutputStream fileOutputStream = new FileOutputStream("data.txt");
@@ -561,6 +716,33 @@ public class TetrisManager {
 
     // DEBUG METHODS
 
+    /**
+     * Vygeneruje tvary z herního setu (musí jim přepsat bloky z 1 na x reprezentující pořadí v poli kvůli barvě)
+     *
+     * @param playSet hrací set
+     *
+     * @return tvary
+     */
+    private Shape[] generatePlaySet(ArrayList<Shape> playSet) {
+        Shape[] shapes = new Shape[playSet.size()];
+        for (int i = 0; i < shapes.length; i++) {
+            Shape ref = playSet.get(i);
+
+
+            int[] blocks = new int[ref.getBlocks().length];
+            for (int j = 0; j < blocks.length; j++) {
+                if (ref.getBlocks()[j] != 0) {
+                    blocks[j] = i + 1;
+                }
+            }
+
+            shapes[i] = new Shape(blocks, ref.getName(), ref.getColor());
+        }
+
+        return shapes;
+    }
+
+    // OLD FOR DEBUG
     private Shape[] generateBasicShapes() {
         return new Shape[]{
                 new Shape(new int[]{0, 0, 0, 0,
@@ -599,6 +781,8 @@ public class TetrisManager {
                         0, 0, 0, 0}, "7", Color.BROWN),
         };
     }
+
+    // DEBUG
 
     public void printPlayZone() {
         StringBuilder print = new StringBuilder();

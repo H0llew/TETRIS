@@ -98,9 +98,10 @@ public class ShapeEditor {
      *
      * @return adresář tvarů
      */
-    private BorderPane getListView() {
+    public BorderPane getListView() {
         BorderPane root = new BorderPane();
 
+        /*
         treeView = new TreeView<>();
 
         treeView.setCellFactory(x -> new ShapeCell());
@@ -109,8 +110,9 @@ public class ShapeEditor {
         //treeView.setRoot(new TreeItem<>(new TreeViewItem("shapes")));
         //createDefaultData(treeView.getRoot());
         initData();
+         */
 
-        root.setCenter(treeView);
+        root.setCenter(getTreeView());
 
         Button removeBtn = new Button(REMOVE_BTN_TEXT);
         removeBtn.setOnAction(action -> removeItem());
@@ -127,6 +129,18 @@ public class ShapeEditor {
         return root;
     }
 
+    public TreeView<TreeViewItem> getTreeView() {
+        treeView = new TreeView<>();
+
+        treeView.setCellFactory(x -> new ShapeCell());
+        treeView.setEditable(true);
+
+        //treeView.setRoot(new TreeItem<>(new TreeViewItem("shapes")));
+        //createDefaultData(treeView.getRoot());
+        initData();
+
+        return treeView;
+    }
     // Form
 
     /**
