@@ -1,10 +1,12 @@
+package tetris;
+
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import leaderboard.LeaderboardData;
+import tetris.leaderboard.LeaderboardData;
 
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;

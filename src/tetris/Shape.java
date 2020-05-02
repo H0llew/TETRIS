@@ -1,3 +1,5 @@
+package tetris;
+
 import javafx.scene.paint.Color;
 
 public class Shape {

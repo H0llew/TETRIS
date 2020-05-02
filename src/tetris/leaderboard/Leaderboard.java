@@ -1,4 +1,4 @@
-package leaderboard;
+package tetris.leaderboard;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -185,7 +185,7 @@ public class Leaderboard {
     /**
      * Vymaže soubor, kterého data se schodují s daty parametru
      *
-     * @param data {@link LeaderboardData}
+     * @param data {@link tetris.leaderboard.LeaderboardData}
      */
     private void deleteFile(LeaderboardData data) {
         File scoresFile = new File(path);

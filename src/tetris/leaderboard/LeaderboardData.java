@@ -1,4 +1,4 @@
-package leaderboard;
+package tetris.leaderboard;
 
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;

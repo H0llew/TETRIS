@@ -1,3 +1,5 @@
+package tetris;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -12,9 +14,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import leaderboard.Leaderboard;
-import leaderboard.LeaderboardData;
-import shapeeditor.ShapeEditor;
+import tetris.leaderboard.Leaderboard;
+import tetris.leaderboard.LeaderboardData;
+import tetris.shapeeditor.ShapeEditor;
 
 public class TetrisGame extends Application {
 
@@ -96,8 +98,7 @@ public class TetrisGame extends Application {
     public void setShapeEditorStage() {
         editorStage = new Stage();
 
-        //Scene scene = new Scene(getShapeEditorPane());
-        ShapeEditor shapeEditor = new ShapeEditor(4);
+        ShapeEditor shapeEditor = new ShapeEditor(4, "shapes");
         Scene scene = new Scene(shapeEditor.create());
         editorStage.setScene(scene);
 

@@ -1,9 +1,9 @@
+package tetris;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 public class Tetris extends Application {

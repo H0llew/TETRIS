@@ -1,4 +1,4 @@
-package leaderboard;
+package tetris.leaderboard;
 
 import javafx.scene.control.TableCell;
 
