@@ -1,18 +1,23 @@
-package tetris;
+package tetris.tetrisengine;
 
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Point2D;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import tetris.leaderboard.LeaderboardData;
 
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
+import java.awt.*;
 import java.io.PrintWriter;
-import java.sql.Time;
 import java.util.*;
+import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Třída reprezentuje samotnou hru tetris. Obsahuje herní smyčku, stará se o vykreslené + logiku hry
@@ -23,8 +28,10 @@ import java.util.*;
 public class TetrisManager {
 
     // šířka výška zóny
-    private static final int ZONE_WIDTH = 14;
-    private static final int ZONE_HEIGHT = 24;
+    public static final int ZONE_WIDTH = 14;
+    public static final int ZONE_HEIGHT = 24;
+
+    private static final String GAME_OVER = "GAME OVER";
 
     // hrací pole
     private final int[] playZone = new int[ZONE_WIDTH * ZONE_HEIGHT];
@@ -57,6 +64,7 @@ public class TetrisManager {
     public IntegerProperty score;
     //level
     public IntegerProperty level;
+    private int removedRows = 0;
 
     // queue dalších tvarů
     List<Shape> nextShapes = new ArrayList<>();
@@ -88,7 +96,7 @@ public class TetrisManager {
         //ArrayList<Shape> play = playSet;
 
         score = new SimpleIntegerProperty(0);
-        level = new SimpleIntegerProperty(0);
+        level = new SimpleIntegerProperty(1);
 
         //frame
         Rectangle rectangle = new Rectangle(100,2);
@@ -123,6 +131,12 @@ public class TetrisManager {
             if (!scoreSaved) {
                 writeToFile(new LeaderboardData("Player", score.getValue()));
                 scoreSaved = true;
+                Text go = new Text(GAME_OVER);
+                go.setFont(Font.font("arials", FontWeight.BOLD, 50));
+                go.setFill(Color.RED);
+                gamePane.getChildren().add(go);
+                go.setX(0);
+                go.setY(ZONE_HEIGHT * cellSize / 2d);
             }
         }
     }
@@ -139,7 +153,10 @@ public class TetrisManager {
      * logický krok cyklu
      */
     private void update() {
-        if (tick == 50) {
+        if (level.getValue() > 50) {
+            level.setValue(50);
+        }
+        if (tick == 50 - level.getValue()) {
             move(MoveDirection.DOWN, 0);
             tick = 0;
         }
@@ -188,6 +205,14 @@ public class TetrisManager {
     private void removeRow(int y) {
         for (int x = 1; x < ZONE_WIDTH - 1; x++) {
             playZone[y * ZONE_WIDTH + x] = 0;
+        }
+        removedRows += 1;
+        if (removedRows == 5) {
+            level.setValue(level.getValue() + 1);
+            removedRows = 0;
+            if (level.getValue() > 50) {
+                level.setValue(50);
+            }
         }
     }
 

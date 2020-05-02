@@ -2,8 +2,10 @@ package tetris;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.beans.property.IntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -14,28 +16,40 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import tetris.leaderboard.Leaderboard;
 import tetris.leaderboard.LeaderboardData;
 import tetris.shapeeditor.FileType;
 import tetris.shapeeditor.ShapeEditor;
 import tetris.shapeeditor.TreeViewItem;
+import tetris.tetrisengine.MoveDirection;
+import tetris.tetrisengine.Shape;
+import tetris.tetrisengine.TetrisManager;
 
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 
+/**
+ * Hlavní bod aplikace. Stará se o přechod mezi scénami, vytváří nové stage a reprezentuje také hlavní menu
+ *
+ * @author Martin Jakubašek
+ * @version 1.00.000
+ */
 public class TetrisGame extends Application {
 
+    // výška menu scény
     private static final int SCENE_WIDTH = 600;
     private static final int SCENE_HEIGHT = 450;
 
-    private static final String gameStartText = "PLAY";
-    private static final String shapeEditorText = "Editor";
-    private static final String leaderboardText = "Leaderboard";
-    private static final String optionsText = "Options";
-    private static final String exitText = "Exit Game";
+    private static final String GAME_START_TEXT = "PLAY";
+    private static final String SHAPE_EDITOR_TEXT = "Editor";
+    private static final String LEADERBOARD_TEXT = "Leaderboard";
+    private static final String OPTIONS_TEXT = "Options";
+    private static final String EXIT_GAME = "Exit Game";
 
     private static final String SHAPE_PATH = "shapes";
     private static final String SCORE_PATH = "scores";
@@ -47,8 +61,14 @@ public class TetrisGame extends Application {
     private Stage tetrisStage;
     private Stage editorStage;
 
+    // editor tvarů
     private ShapeEditor shapeEditor;
 
+    /**
+     * Vstupní bod programu
+     *
+     * @param args nevyužité
+     */
     public static void main(String[] args) {
         launch(args);
     }
@@ -68,7 +88,9 @@ public class TetrisGame extends Application {
     // STAGES
 
     /**
-     * Creates a new stage with tetris game.
+     * Vytvoří novou stage s tetrisem
+     *
+     * @param playSet herní set pro tetris
      */
     public void setTetrisStage(ArrayList<Shape> playSet) {
         tetrisStage = new Stage();
@@ -81,14 +103,28 @@ public class TetrisGame extends Application {
         root.setCenter(gamePane);
 
         Label label1 = new Label("");
-        label1.textProperty().bind(tetris.score.asString());
+        label1.setFont(Font.font("arials", FontWeight.BOLD, 25));
+        label1.textProperty().bind(tetris.score.asString("Score: %05d"));
         Label label2 = new Label("");
+        label2.setFont(Font.font("arials", FontWeight.BOLD, 15));
+        label2.textProperty().bind(tetris.level.asString("Level: %03d"));
+
+        VBox vBox = new VBox();
+        vBox.setPadding(new Insets(10));
+        vBox.getChildren().addAll(label1, label2);
+
         ImageView imageView = new ImageView(hint);
+        StackPane stackPane = new StackPane();
+        stackPane.setAlignment(Pos.BOTTOM_LEFT);
+        stackPane.getChildren().add(imageView);
 
-        VBox box = new VBox();
-        box.getChildren().addAll(label1, label2, imageView);
+        AnchorPane anchorPane = new AnchorPane();
+        anchorPane.getChildren().addAll(vBox, imageView);
 
-        root.setRight(box);
+        AnchorPane.setBottomAnchor(imageView, 0d);
+        AnchorPane.setRightAnchor(imageView, 0d);
+
+        root.setRight(anchorPane);
 
         Scene scene = new Scene(root);
         createInputHandler(scene, tetris);
@@ -106,7 +142,7 @@ public class TetrisGame extends Application {
     }
 
     /**
-     * Creates a new stage with shape editor
+     * Vytvoří nový stage s editorem tvarů
      */
     public void setShapeEditorStage() {
         editorStage = new Stage();
@@ -121,31 +157,24 @@ public class TetrisGame extends Application {
     // SCENES
 
     /**
-     * Changes the main menu stage scene to main menu scene
+     * Změní aktuální scénu na scénu s hlavním menu
      */
     public void setMainMenuScene() {
         mainMenuStage.setScene(new Scene(getMainMenuPane(), SCENE_WIDTH, SCENE_HEIGHT));
     }
 
     /**
-     * Changes the main menu stage scene to leaderboard scene
+     * Změní scénu na scénu s tabulkou pořadí
      */
     public void setLeaderboardScene() {
         //mainMenuStage.setScene(new Scene(getLeaderboardPane(), SCENE_WIDTH, SCENE_HEIGHT));
         mainMenuStage.setScene(new Scene(Leaderboard.getLeaderboard().create(SCORE_PATH, returnToMMBTN()), SCENE_WIDTH, SCENE_HEIGHT));
     }
 
-    /**
-     * Changes the main menu stage scene to options scene
-     */
-    public void setOptionsScene() {
-        mainMenuStage.setScene(new Scene(getOptionsPane(), SCENE_WIDTH, SCENE_HEIGHT));
-    }
-
     // PANES
 
     /**
-     * Creates a main menu pane
+     * Vytvoří pane s hlavní menu
      *
      * @return main menu pane
      */
@@ -172,85 +201,32 @@ public class TetrisGame extends Application {
         return root;
     }
 
+    /**
+     * Vytvoří pane s tetrisem
+     *
+     * @return pane s tetrisem
+     */
     private Pane getTetrisPane() {
         return new Pane();
     }
 
-    private Parent getShapeEditorPane() {
-        HBox root = new HBox();
-
-        BorderPane treePane = new BorderPane();
-        TreeView<Object> treeView = new TreeView<>();
-        treePane.setCenter(treeView);
-        Button remove = new Button("REMOVE");
-        treePane.setBottom(remove);
-
-        VBox vBox = new VBox();
-        vBox.getChildren().add(getEditorBtns());
-
-        Label name = new Label("name");
-        TextField nameField = new TextField("set name");
-
-        Label color = new Label("color");
-        TextField colorPicker = new TextField("pick color");
-
-        Button add = new Button("ADD");
-
-        HBox hBox = new HBox();
-        hBox.getChildren().addAll(name, nameField, color, colorPicker, add);
-
-        vBox.getChildren().add(hBox);
-
-        root.getChildren().addAll(treePane, vBox);
-
-        return root;
-    }
-
-    private Parent getLeaderboardPane() {
-        BorderPane root = new BorderPane();
-
-        TableView<LeaderboardData> tableView = new TableView<>();
-        TableColumn<LeaderboardData, String> nameColumn = new TableColumn<>("Player Name");
-        TableColumn<LeaderboardData, Integer> scoreColumn = new TableColumn<>("Score");
-
-        tableView.getColumns().addAll(nameColumn, scoreColumn);
-
-        tableView.setItems(initData());
-
-        nameColumn.setCellValueFactory(new PropertyValueFactory<LeaderboardData, String>("playerName"));
-        scoreColumn.setCellValueFactory(new PropertyValueFactory<LeaderboardData, Integer>("score"));
-
-        root.setCenter(tableView);
-
-        Button button = new Button("Exit to main menu");
-        button.setOnAction(actionEvent -> setMainMenuScene());
-
-        root.setBottom(button);
-
-        //leaderboard.Leaderboard leaderboard = leaderboard.Leaderboard.getLeaderboard();
-        //leaderboard.create();
-
-        return root;
-    }
-
-    private Parent getOptionsPane() {
-        return testPane("Options");
-    }
-
     // Main menu pane buttons
 
+    /**
+     * Vrátí tlačítka hlavní menu s přiřazenými eventy a rozměry
+     *
+     * @return tlačítka hlavního menu
+     */
     private Button[] getMainMenuBTNS() {
-        Button gameStartBTN = new Button(gameStartText);
-        Button shapeEditorBTN = new Button(shapeEditorText);
-        Button leaderboardBTN = new Button(leaderboardText);
-        Button optionsBTN = new Button(optionsText);
-        Button exitBTN = new Button(exitText);
+        Button gameStartBTN = new Button(GAME_START_TEXT);
+        Button shapeEditorBTN = new Button(SHAPE_EDITOR_TEXT);
+        Button leaderboardBTN = new Button(LEADERBOARD_TEXT);
+        Button exitBTN = new Button(EXIT_GAME);
 
         gameStartBTN.setOnAction(actionEvent -> createGameStage());
         shapeEditorBTN.setOnAction(actionEvent -> createEditorStage());
 
         leaderboardBTN.setOnAction(actionEvent -> setLeaderboardScene());
-        optionsBTN.setOnAction(actionEvent -> setOptionsScene());
 
         exitBTN.setOnAction(actionEvent -> getOnExit());
 
@@ -261,14 +237,16 @@ public class TetrisGame extends Application {
         shapeEditorBTN.setFont(Font.font(20));
 
         leaderboardBTN.setPrefWidth(100);
-        optionsBTN.setPrefWidth(100);
         exitBTN.setPrefWidth(70);
 
-        return new Button[]{gameStartBTN, shapeEditorBTN, leaderboardBTN, optionsBTN, exitBTN};
+        return new Button[]{gameStartBTN, shapeEditorBTN, leaderboardBTN, exitBTN};
     }
 
     // Buttons
 
+    /**
+     * Vytvoří stage se hrou
+     */
     private void createGameStage() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Select play set");
@@ -354,14 +332,25 @@ public class TetrisGame extends Application {
                 });
     }
 
+    /**
+     * Vytvoří stage s editorem tvarů
+     */
     private void createEditorStage() {
         setShapeEditorStage();
     }
 
+    /**
+     * event pro tlačítko s exitem
+     */
     private void getOnExit() {
         System.exit(0);
     }
 
+    /**
+     * tlačítko pro návrat do hl menu
+     *
+     * @return hlavní menu tlačítko
+     */
     private Button returnToMMBTN() {
         Button button = new Button("");
         button.setOnAction(actionEvent -> setMainMenuScene());
@@ -370,6 +359,12 @@ public class TetrisGame extends Application {
 
     // INPUT HANDLER
 
+    /**
+     * Input pro tetris stage
+     *
+     * @param scene scéna s tetrisem
+     * @param tetris {@link TetrisManager}
+     */
     private void createInputHandler(Scene scene, TetrisManager tetris) {
         scene.setOnKeyPressed(keyEvent -> {
             switch (keyEvent.getCode()) {
@@ -383,7 +378,7 @@ public class TetrisGame extends Application {
                     break;
                 case DOWN:
                     //System.out.println("DOWN KEY PRESSED");
-                    tetris.move(MoveDirection.DOWN,10);
+                    tetris.move(MoveDirection.DOWN,1);
                     break;
                 case R:
                     //System.out.println("CURRENT SHAPE ROTATED");
@@ -393,7 +388,7 @@ public class TetrisGame extends Application {
         });
     }
 
-    // EDITOR
+    // DEBUG
 
     private GridPane getEditorBtns() {
         GridPane btns = new GridPane();
@@ -407,8 +402,6 @@ public class TetrisGame extends Application {
 
         return btns;
     }
-
-    // DEBUG METHODS
 
     private Pane testPane(String text) {
         Label label = new Label(text);
@@ -427,7 +420,6 @@ public class TetrisGame extends Application {
         Button options = new Button("Options");
         Button leaderboard = new Button("leaderboard.Leaderboard");
 
-        options.setOnAction(actionEvent -> setOptionsScene());
         leaderboard.setOnAction(actionEvent -> setLeaderboardScene());
 
         FlowPane pane = new FlowPane();

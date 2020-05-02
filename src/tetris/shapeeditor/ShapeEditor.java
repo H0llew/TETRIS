@@ -5,10 +5,8 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import tetris.Shape;
+import tetris.tetrisengine.Shape;
 
-import javax.xml.namespace.QName;
-import java.awt.event.TextEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

@@ -5,7 +5,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-import tetris.Shape;
+import tetris.tetrisengine.Shape;
 
 /**
  * Reprezentuje datový model tvaru, položky v {@link javafx.scene.control.TreeView}
